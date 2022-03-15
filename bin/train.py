@@ -24,7 +24,7 @@ from ignite.engine import Engine, Events
 from ignite.metrics import RunningAverage
 from ignite.handlers import ModelCheckpoint, global_step_from_engine
 
-def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=False, cuda_device=1):
+def do_train(checkpoint=None, direction='amr', add_parents_attention=False, max_length=1024, attention_form='add', layer_parents=False, layer_parents_ids=[], add_parents_embedding=False, add_siblings_attention=False, tune_attention=False, split_both_decoder=False, parents_attention_number=4, siblings_attention_number=4, fp16=False, cuda_device=1, save_dir=""):
 
     assert direction in ('amr', 'text', 'both')
 
@@ -39,8 +39,38 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
         penman_linearization=config['penman_linearization'],
         collapse_name_ops=config['collapse_name_ops'],
         use_pointer_tokens=config['use_pointer_tokens'],
-        raw_graph=config.get('raw_graph', False)
+        raw_graph=config.get('raw_graph', False),
+        add_parents_attention=add_parents_attention,
+        add_parents_embedding=add_parents_embedding,
+        add_siblings_attention=add_siblings_attention,
+        tune_attention=tune_attention,
+        parents_attention_number=parents_attention_number,
+        siblings_attention_number=siblings_attention_number,
+        attention_form=attention_form,
+        layer_parents=layer_parents,
+        layer_parents_ids=layer_parents_ids,
     )
+
+#     print(config['train'])
+    train_loader = instantiate_loader(
+        config['train'],
+        tokenizer,
+        batch_size=config['batch_size'],
+        evaluation=False,
+        use_recategorization=config['use_recategorization'],
+        remove_longer_than=config['remove_longer_than'],
+        remove_wiki=config['remove_wiki'],
+        dereify=config['dereify'],
+        add_parents_attention=add_parents_attention,
+        add_parents_embedding=add_parents_embedding,
+        add_siblings_attention=add_siblings_attention,
+    )
+    
+#     for i, batch in enumerate(train_loader):
+# #         print(i, len(batch[1]['decoder_input_ids']))
+#         assert len(batch[1]['decoder_input_ids'][0]) == len(batch[2]['parents'][0])
+    
+    
 
     print(model)
     print(model.config)
@@ -80,20 +110,9 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
         raise ValueError
 
     scaler = GradScaler(enabled=fp16)
-    
-    train_loader = instantiate_loader(
-        config['train'],
-        tokenizer,
-        batch_size=config['batch_size'],
-        evaluation=False,
-        use_recategorization=config['use_recategorization'],
-        remove_longer_than=config['remove_longer_than'],
-        remove_wiki=config['remove_wiki'],
-        dereify=config['dereify'],
-    )
 
-    dev_gold_path = ROOT / 'data/tmp/dev-gold.txt'
-    dev_pred_path = ROOT / 'data/tmp/dev-pred.txt'
+    dev_gold_path = ROOT / ('data/tmp/' + save_dir + '_dev-gold.txt')
+    dev_pred_path = ROOT / ('data/tmp/' + save_dir + '_dev-pred.txt')
     dev_loader = instantiate_loader(
         config['dev'],
         tokenizer,
@@ -102,25 +121,68 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
         use_recategorization=config['use_recategorization'],
         remove_wiki=config['remove_wiki'],
         dereify=config['dereify'],
+        add_parents_attention=add_parents_attention,
+        add_parents_embedding=add_parents_embedding,
+        add_siblings_attention=add_siblings_attention,
     )
 
     if direction == 'amr':
 
         def train_step(engine, batch):
             model.train()
-            x, y, extra = batch
+            x = batch["x"]
+            y = batch["y"]
+#             z = batch["z"]
+            extra = batch["extra"]
+            
+            if add_parents_attention or add_parents_embedding:
+                z = batch["z"]
+            else:
+                z = {}
+#                 x, y, z, extra = batch
+#             else:
+#                 x, y, extra = batch
+            if add_siblings_attention:
+                t = batch["t"]
+            else:
+                t = {}
             model.amr_mode = True
             with autocast(enabled=fp16):
-                loss, *_ = model(**x, **y)
+#                 if add_parents_attention or add_parents_embedding:
+#                     loss, *_ = model(**x, **y, **z, **t)
+#                 else:
+                loss, *_ = model(**x, **y, **z, **t)
             scaler.scale((loss / config['accum_steps'])).backward()
             return loss.item()
 
         @torch.no_grad()
         def eval_step(engine, batch):
             model.eval()
-            x, y, extra = batch
+#             if add_parents_attention or add_parents_embedding:
+#                 x, y, z, extra = batch
+#             else:
+#                 x, y, extra = batch
+            x = batch["x"]
+            y = batch["y"]
+#             z = batch["z"]
+            extra = batch["extra"]
+            
+            if add_parents_attention or add_parents_embedding:
+                z = batch["z"]
+            else:
+                z = {}
+#                 x, y, z, extra = batch
+#             else:
+#                 x, y, extra = batch
+            if add_siblings_attention:
+                t = batch["t"]
+            else:
+                t = {}
             model.amr_mode = True
-            loss, *_ = model(**x, **y)
+#             if add_parents_attention or add_parents_embedding:
+#                 loss, *_ = model(**x, **y, **z)
+#             else:
+            loss, *_ = model(**x, **y, **z, **t)
             return loss.item()
 
     elif direction == 'text':
@@ -186,11 +248,13 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
     @trainer.on(Events.ITERATION_COMPLETED(every=config['accum_steps']))
     def update(engine):
         scaler.unscale_(optimizer)
-        torch.nn.utils.clip_grad_norm_(model.parameters(), config['grad_norm'])
+        g = torch.nn.utils.clip_grad_norm_(model.parameters(), config['grad_norm'])
         scaler.step(optimizer)
         scaler.update()
         optimizer.zero_grad()
         scheduler.step()
+#        if engine.state.iteration % 100 == 0:
+#        print(engine.state.iteration)
 
     @trainer.on(Events.EPOCH_COMPLETED)
     def log_trn_loss(engine):
@@ -213,7 +277,7 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
             def smatch_eval(engine):
                 device = next(model.parameters()).device
                 dev_loader.device = device
-                graphs = predict_amrs(dev_loader, model, tokenizer, restore_name_ops=config['collapse_name_ops'])
+                graphs = predict_amrs(dev_loader, model, tokenizer, max_length=max_length, beam_size=config['beam_size'], restore_name_ops=config['collapse_name_ops'], add_parents_attention=add_parents_attention, add_parents_embedding=add_parents_embedding, add_siblings_attention=add_siblings_attention)
                 write_predictions(dev_pred_path, tokenizer, graphs)
                 try:
                     smatch = compute_smatch(dev_gold_path, dev_pred_path)
@@ -350,7 +414,10 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
                 root.mkdir()
             except:
                 pass
-            where_checkpoints = root/str(len(list(root.iterdir())))
+            if save_dir:
+                where_checkpoints=root/save_dir
+            else:
+                where_checkpoints = root/str(len(list(root.iterdir())))
             try:
                 where_checkpoints.mkdir()
             except:
@@ -363,14 +430,16 @@ def do_train(checkpoint=None, direction='amr', split_both_decoder=False, fp16=Fa
             prefix,
             n_saved=1,
             create_dir=True,
+            require_empty=checkpoint is None,
             score_function=score_function,
             global_step_transform=global_step_from_engine(trainer),
         )
         evaluator.add_event_handler(Events.EPOCH_COMPLETED, handler, to_save)
-
+    
     with torch.cuda.device(cuda_device):
         model.cuda()
     device = next(model.parameters()).device
+    print(device)
     train_loader.device = device
     trainer.run(train_loader, max_epochs=config['max_epochs'])
 
@@ -394,6 +463,17 @@ if __name__ == '__main__':
         help='Warm-start from a previous fine-tuned checkpoint.')
     parser.add_argument('--fp16', action='store_true')
     parser.add_argument('--cuda', type=int, default=1)
+    parser.add_argument('--save_dir', type=str, default="")
+    parser.add_argument('--add_parents_attention', action='store_true')
+    parser.add_argument('--parents_attention_number', type=int, default=4)
+    parser.add_argument('--add_parents_embedding', action='store_true')
+    parser.add_argument('--tune_attention', action='store_true')
+    parser.add_argument('--add_siblings_attention', action='store_true')
+    parser.add_argument('--siblings_attention_number', type=int, default=4)
+    parser.add_argument('--attention_form', type=str, default='add')
+    parser.add_argument('--layer_parents', action='store_true')
+    parser.add_argument('--layer_parents_ids', nargs='+', type=int)
+    parser.add_argument('--max_length', type=int, default=1024)
     args, unknown = parser.parse_known_args()
 
     if args.fp16 and autocast_available:
@@ -423,4 +503,15 @@ if __name__ == '__main__':
         split_both_decoder=args.split_both_decoder,
         fp16=args.fp16,
         cuda_device=args.cuda,
+        save_dir=args.save_dir,
+        add_parents_attention=args.add_parents_attention,
+        parents_attention_number=args.parents_attention_number,
+        add_parents_embedding=args.add_parents_embedding,
+        add_siblings_attention = args.add_siblings_attention,
+        siblings_attention_number=args.siblings_attention_number,
+        tune_attention=args.tune_attention,
+        attention_form=args.attention_form,
+        layer_parents=args.layer_parents,
+        layer_parents_ids=args.layer_parents_ids,
+        max_length=args.max_length,
     )

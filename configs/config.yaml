@@ -38,27 +38,27 @@ beam_size: 1
 dropout: 0.25
 attention_dropout: 0.0
 smart_init: True
-accum_steps: 10
-warmup_steps: 1
-training_steps: 250000
-weight_decay: 0.006
+accum_steps: 20
+warmup_steps: 1000
+training_steps: 20000
+weight_decay: 0.004
 grad_norm: 2.5
-scheduler: constant
+scheduler: cosine
 learning_rate: 0.00003
-max_epochs: 30
+max_epochs: 40
 save_checkpoints: True
 log_wandb: False
 warm_start: True
 use_recategorization: True
 best_loss: False
-remove_longer_than: 1024
+remove_longer_than: 512
 
 # <------------------
 # Data: replace DATA below with the root of your AMR 2/3 release folder
-# train: ../amr_data/LDC2017T10/data/amrs/split/training/*.txt
-# dev: ../amr_data/LDC2017T10/data/amrs/split/dev/*.txt
-# test: ../amr_data/LDC2017T10/data/amrs/split/test/*.txt
-train: data/amr_2_reca/dev.txt.features.preproc
+#train: ../amr_data/LDC2017T10/data/amrs/split/training/*.txt
+#dev: ../amr_data/LDC2017T10/data/amrs/split/dev/*.txt
+#test: ../amr_data/LDC2017T10/data/amrs/split/test/*.txt
+train: data/amr_2_reca/train.txt.features.preproc
 dev: data/amr_2_reca/dev.txt.features.preproc
 test: data/amr_2_reca/test.txt.features.preproc
 # train: ../amr_data/amr_annotation_3.0/data/amrs/split/training/*.txt
