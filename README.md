@@ -51,4 +51,4 @@ python bin/blinkify.py \
 To have comparable Smatch scores you will also need to use the scripts available at https://github.com/mdtux89/amr-evaluation
 
 ## Acknowledgements
-We adopted some modules or code snippets from [Spring](https://github.com/SapienzaNLP/spring). Thanks to this projects!
+We adopted the code framework and some modules or code snippets from [Spring](https://github.com/SapienzaNLP/spring). Thanks to this project!
