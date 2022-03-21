@@ -5,7 +5,7 @@ penman_linearization: True
 use_pointer_tokens: True
 raw_graph: False
 
-remove_wiki: True
+remove_wiki: False
 dereify: False
 collapse_name_ops: False
 
@@ -26,7 +26,7 @@ max_epochs: 40
 save_checkpoints: True
 log_wandb: False
 warm_start: True
-use_recategorization: True
+use_recategorization: False
 best_loss: False
 remove_longer_than: 512
 
