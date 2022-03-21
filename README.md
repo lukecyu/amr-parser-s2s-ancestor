@@ -11,6 +11,9 @@ pip install -e .
 mkdir data/tmp/
 ```
 
+## Dataset
+Please refer to [stog](https://github.com/sheng-z/stog) for constructing the recategorization dataset.
+
 ## Train
 Modify the dataset path in the configuration file `configs/config.yaml` before training (see explanation from the last few lines in the file). We also provide the hyperparaters shown in the paper for the experiment of AMR2 with recategorization. Modify it if you need.  
 
@@ -34,26 +37,8 @@ Run the following script
 bash test.sh
 ```
 
-To reproduce our paper's results, you will also need need to run the [BLINK](https://github.com/facebookresearch/BLINK) 
-entity linking system on the prediction file (`data/tmp/amr2.0/pred.amr.txt` in the previous code snippet). 
-To do so, you will need to install BLINK, and download their models:
-```shell script
-git clone https://github.com/facebookresearch/BLINK.git
-cd BLINK
-pip install -r requirements.txt
-sh download_blink_models.sh
-cd models
-wget http://dl.fbaipublicfiles.com/BLINK//faiss_flat_index.pkl
-cd ../..
-```
-Then, you will be able to launch the `blinkify.py` script:
-```shell
-python bin/blinkify.py \
-    --datasets data/tmp/amr2.0/pred.amr.txt \
-    --out data/tmp/amr2.0/pred.amr.blinkified.txt \
-    --device cuda \
-    --blink-models-dir BLINK/models/
-```
+To reproduce our paper's results, you will also need to run the [BLINK](https://github.com/facebookresearch/BLINK) 
+entity linking system on the prediction amr file. Please refer to [Spring](https://github.com/SapienzaNLP/spring) for further details. 
 
 To have comparable Smatch scores you will also need to use the scripts available at https://github.com/mdtux89/amr-evaluation
 
