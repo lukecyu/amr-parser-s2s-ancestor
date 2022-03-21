@@ -27,12 +27,12 @@ bash train.sh
 and results are in `runs/`
 
 ## Evaluate
-Modify `test.sh`
+We also provide three different test bash scripts (corresponding the three different training bash scripts). In each script, `gold-path` and `pred-path` are seperately the path of the gold amr and the generated amr for test dataset. `dataset` is the path of the test dataset, `checkpoint` is the path of the well-trained model. `max_length` is the maximum length of the linearized AMR sequence. These scripts will also report the Smatch score.
 
+Run the following script
 ```shell script
 bash test.sh
 ```
-`gold.amr.txt` and `pred.amr.txt` will contain, respectively, the concatenated gold and the predictions.
 
 To reproduce our paper's results, you will also need need to run the [BLINK](https://github.com/facebookresearch/BLINK) 
 entity linking system on the prediction file (`data/tmp/amr2.0/pred.amr.txt` in the previous code snippet). 

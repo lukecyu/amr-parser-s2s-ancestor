@@ -1,0 +1,12 @@
+python bin/predict_amrs.py \
+    --datasets data/amr_2_reca/test.txt.features.preproc.part \
+    --gold-path data/tmp/amr_2.0/gold_parents-attention-layer_4567_amr2-reca_0.00003_0.25_0.004_20.txt \
+    --pred-path data/tmp/amr_2.0/pred_parents-attention-layer_4567_amr2-reca_0.00003_0.25_0.004_20.txt \
+    --checkpoint runs/parents-attention-layer_4567_amr2-reca_0.00003_0.25_0.004_20/best-smatch_checkpoint_24_0.8439.pt \
+    --beam-size 5 \
+    --batch-size 500 \
+    --device cuda:6 \
+    --layer_parents \
+    --layer_parents_ids 4 5 6 7 \
+    --use-recategorization \
+    --penman-linearization --use-pointer-tokens --add_parents_attention \
