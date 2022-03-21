@@ -1,4 +1,4 @@
-from spring_amr.evaluation import compute_smatch_2
+from ancestor_amr.evaluation import compute_smatch_2
 
 
 if __name__ == '__main__':

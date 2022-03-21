@@ -4,8 +4,8 @@ import penman
 import torch
 from tqdm import tqdm
 
-from spring_amr.penman import encode
-from spring_amr.utils import instantiate_model_and_tokenizer
+from ancestor_amr.penman import encode
+from ancestor_amr.utils import instantiate_model_and_tokenizer
 
 def read_file_in_batches(path, batch_size=1000, max_length=100):
 

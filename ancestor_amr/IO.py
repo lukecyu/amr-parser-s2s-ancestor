@@ -1,8 +1,8 @@
 import glob
 from typing import List, Union, Iterable
 from pathlib import Path
-from spring_amr.penman import load as pm_load
-from spring_amr.dfs import AMRGraph, convert_amr_dfs, read_annotated_amr
+from ancestor_amr.penman import load as pm_load
+from ancestor_amr.dfs import AMRGraph, convert_amr_dfs, read_annotated_amr
 
 def read_raw_amr_data(
         paths: List[Union[str, Path]],

@@ -3,7 +3,7 @@ import random
 import torch
 from cached_property import cached_property
 from torch.utils.data import Dataset
-from spring_amr.IO import read_raw_amr_data, read_raw_amr_data_new
+from ancestor_amr.IO import read_raw_amr_data, read_raw_amr_data_new
 
 def reverse_direction(x, y, pad_token_id=1):
     input_ids = torch.cat([y['decoder_input_ids'], y['lm_labels'][:, -1:]], 1)

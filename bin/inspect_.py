@@ -1,6 +1,6 @@
 import torch
 import penman
-from spring_amr.utils import instantiate_model_and_tokenizer
+from ancestor_amr.utils import instantiate_model_and_tokenizer
 
 if __name__ == '__main__':
 

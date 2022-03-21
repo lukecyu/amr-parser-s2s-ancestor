@@ -7,10 +7,10 @@ import regex as re
 import torch
 from transformers import BartTokenizer
 
-from spring_amr import ROOT, postprocessing
-from spring_amr.linearization import AMRTokens, AMRLinearizer
-from spring_amr.penman import encode
-from spring_amr.dfs import AMRGraph, convert_amr_dfs
+from ancestor_amr import ROOT, postprocessing
+from ancestor_amr.linearization import AMRTokens, AMRLinearizer
+from ancestor_amr.penman import encode
+from ancestor_amr.dfs import AMRGraph, convert_amr_dfs
 
 
 

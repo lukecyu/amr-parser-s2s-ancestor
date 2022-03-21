@@ -1,12 +1,12 @@
 import blink.main_dense as main_dense
 from logging import getLogger
 from penman import Triple, Graph
-from spring_amr.evaluation import write_predictions
-from spring_amr.tokenization_bart import AMRBartTokenizer
+from ancestor_amr.evaluation import write_predictions
+from ancestor_amr.tokenization_bart import AMRBartTokenizer
 import json
 from pathlib import Path
-from spring_amr.IO import read_raw_amr_data
-from spring_amr.entities import read_entities
+from ancestor_amr.IO import read_raw_amr_data
+from ancestor_amr.entities import read_entities
 
 if __name__ == '__main__':
 
